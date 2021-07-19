@@ -15,7 +15,6 @@ namespace SheetsIO
         public bool IsFreeSize => Field.Rank > 0 && Field.ElementsCount.Count == 0;
         public bool Optional => Field.IsOptional || Rank > 0 && Field.ElementsCount.Count > 0;
         public Type TargetType => Field.Types[Rank];
-        V2Int Offset => Field.Sizes[Rank].Scale(1 - (Rank & 1), Rank & 1);
         IEnumerable<int> ChildIndices => Enumerable.Range(0, Field.MaxCount(Rank));
 
         public IOPointer(IOFieldAttribute field, int rank, int index, V2Int pos, string name) {
@@ -34,10 +33,10 @@ namespace SheetsIO
         public static IEnumerable<IOPointer> GetChildren(IOPointer p) =>
             p.Rank == p.Field.Rank
                 ? p.Field.Meta.GetPointers(p.Pos)
-                : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, p.Pos.Add(p.Offset.Scale(i)), ""));
+                : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, p.Pos.Add(p.Field.Offsets[p.Rank + 1].Scale(i)), ""));
 
         public override string ToString() => string.IsNullOrEmpty(Name)
-                                                 ? $"{TargetType.FullName} [#{Index}]. Pos = ({Pos.X},{Pos.Y})"
-                                                 : $"{TargetType.FullName} [#{Index}]. Name = {Name}";
+                                                 ? $"{TargetType.Name} [#{Index}]. Pos = ({Pos}) {(Optional ? " OPT" : string.Empty)}"
+                                                 : $"{TargetType.Name} [#{Index}]. Name = {Name} {(Optional ? " OPT" : string.Empty)}";
     }
 }

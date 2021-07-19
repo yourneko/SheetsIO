@@ -19,8 +19,7 @@ namespace SheetsIO
 
         static IEnumerable<char> ToLetters(int number) => number < SheetsIO.A1LettersCount
                                                               ? new[] {(char) ('A' + number)}
-                                                              : ToLetters(number / SheetsIO.A1LettersCount - 1)
-                                                                 .Append((char) ('A' + number % SheetsIO.A1LettersCount));
+                                                              : ToLetters(number / SheetsIO.A1LettersCount - 1).Append((char) ('A' + number % SheetsIO.A1LettersCount));
 
         static int Evaluate(IEnumerable<char> digits, char zero, int @base) {
             int result = (int) digits.Reverse().Select((c, i) => (c - zero) * Math.Pow(@base, i)).Sum();

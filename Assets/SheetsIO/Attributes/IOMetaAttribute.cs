@@ -29,15 +29,11 @@ namespace SheetsIO
             Type        = type;
             var allFields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                                 .Select(field => field.GetIOAttribute()).Where(x => x != null).ToArray();
-            if (allFields.Length == 0)
+            if (allFields.Length == 0) 
                 throw new Exception($"Class {type.Name} has no IOField's!");
-            
-            Sheets   = allFields.Where(x => !string.IsNullOrEmpty(x.Meta?.SheetName ?? string.Empty)).ToArray();
-            Regions = allFields.Where(x => string.IsNullOrEmpty(x.Meta?.SheetName ?? string.Empty))
-                               .OrderBy(f => f.FieldInfo.GetCustomAttribute<IOPlacementAttribute>()?.SortOrder
-                                          ?? (f.Rank == 0 || f.Rank == f.ElementsCount.Count ? 1000 : int.MaxValue + f.Rank - 2))
-                               .ToArray();
-            Size = V2Int.Zero;
+            Sheets  = allFields.Where(x => !string.IsNullOrEmpty(x.Meta?.SheetName ?? string.Empty)).ToArray();
+            Regions = allFields.Where(x => x.Meta is null || string.IsNullOrEmpty(x.Meta.SheetName)).OrderBy(x => x.SortOrder).ToArray();
+            Size    = V2Int.Zero;
             foreach (var f in Regions) {
                 f.PosInType = new V2Int(Size.X, 0);
                 Size        = new V2Int(Size.X + f.Sizes[0].X, Math.Max(Size.Y, f.Sizes[0].Y));
@@ -45,7 +41,7 @@ namespace SheetsIO
         }
 
         internal string AppendNamePart(string parentName) => $"{parentName} {SheetName}".Trim();
-        internal IEnumerable<IOPointer> GetSheetPointers(string name) => Sheets.Select((f, i) => new IOPointer(f, 0, i, V2Int.Zero, AppendNamePart(name)));
+        internal IEnumerable<IOPointer> GetSheetPointers(string name) => Sheets.Select((f, i) => new IOPointer(f, 0, i, V2Int.Zero, f.Meta.AppendNamePart(name)));
         internal IEnumerable<IOPointer> GetPointers(V2Int pos) => Regions.Select((f, i) => new IOPointer(f, 0, i, pos.Add(f.PosInType), ""));
     }
 }

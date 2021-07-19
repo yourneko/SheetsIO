@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEngine;
 
 namespace SheetsIO
 {
@@ -25,6 +24,8 @@ namespace SheetsIO
             return attribute;
         }
 
+        public static V2Int GetSize(this IOMetaAttribute meta) => meta?.Size ?? new V2Int(1, 1);
+
         public static bool TryGetElement<T>(this IList<T> target, int index, out T result) {
             bool exists = (target?.Count ?? 0) > index;
             result = exists ? target[index] : default; // safe, index >= 0
@@ -34,7 +35,7 @@ namespace SheetsIO
         public static IEnumerable<T> RepeatAggregated<T>(this T start, int max, Func<T, int, T> func) {
             int i = max;
             var value = start;
-            do yield return value; // kind of Enumerable.Aggregate(), but after each step returns a current value
+            do yield return value; // kind of Enumerable.Aggregate(), but after each step a current value is returned
             while (--i >= 0 && (value = func(value, i)) != null);
         }
         
@@ -45,7 +46,6 @@ namespace SheetsIO
         }
 
         static bool TryGetChild(this object parent, IOPointer p, out object child) {
-            Debug.Log(p);
             if (parent != null && p.Rank == 0) {
                 child = p.Field.FieldInfo.GetValue(parent);
                 return true;
@@ -69,7 +69,8 @@ namespace SheetsIO
         }
         
         public static object MakeObject(this IOPointer p, ArrayList children) {
-            if (p.Field.Types[p.Rank].IsArray) return children.ToArray();
+            if (p.Field.Types[p.Rank].IsArray) 
+                return MakeArray(p, children);
             
             var result = Activator.CreateInstance(p.TargetType);
             if (p.Rank == p.Field.Rank)
@@ -77,7 +78,7 @@ namespace SheetsIO
             else if (result is IList list)
                 foreach (var child in children)
                     list.Add(child);
-            else SetFieldValues(p, children, result);
+            else SetValues(p, children, result);
             return result;
         }
 
@@ -86,10 +87,17 @@ namespace SheetsIO
                 f.SetValue(parent, child);
         }
 
-        static void SetFieldValues(IOPointer p, IEnumerable children, object parent) {
+        static void SetValues(IOPointer p, IEnumerable children, object parent) {
             var method = addMethodInfo.MakeGenericMethod(p.Field.Types[p.Rank]);
             foreach (var child in children)
                 method.Invoke(parent, new[]{child});
+        }
+
+        static object MakeArray(IOPointer p, ArrayList children) {
+            var result = (IList)Array.CreateInstance(p.Field.Types[p.Rank + 1], children.Count);
+            for (int i = 0; i < children.Count; i++)
+                result[i] = children[i];
+            return result;
         }
     }
 }

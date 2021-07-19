@@ -23,7 +23,7 @@ namespace SheetsIO
             var sPointers = type.GetSheetPointers(name).ToArray();
             if (!sPointers.TryGetChildren(ReadSheetObject, out var children))
                 return false;
-            result.SetFields(sPointers.Select(x => x.Field.FieldInfo), children);
+            result.SetFields(sPointers.Select(p => p.Field.FieldInfo), children);
             if (type.Regions.Count == 0) return true;
             
             if (!sheets.Contains(name)) return false;
@@ -31,10 +31,10 @@ namespace SheetsIO
             return true;
         }
 
-        bool ReadSheetObject(IOPointer p, out object obj) {
+        bool ReadSheetObject(IOPointer p, out object result) {
             return (p.Rank == p.Field.Rank
-                        ? ReadType(p.Field.Meta, p.Name, out obj)
-                        : (obj = IOPointer.GetChildrenSheets(p).TryGetChildren(ReadSheetObject, out var l) ? p.MakeObject(l) : null) != null)
+                        ? ReadType(p.Field.Meta, p.Name, out result)
+                        : (result = IOPointer.GetChildrenSheets(p).TryGetChildren(ReadSheetObject, out var l) ? p.MakeObject(l) : null) != null)
                 || p.Optional;
         }
 

@@ -42,7 +42,8 @@ namespace SheetsIO
         /// <typeparam name="T">Type of serialized object.</typeparam>
         public Task<bool> WriteAsync<T>(T obj, string spreadsheet, string sheet = "") {
             var meta = typeof(T).GetIOAttribute();
-            return service.WriteRangesAsync(spreadsheet, new WriteContext(meta, meta.AppendNamePart(sheet), obj, serializer).ValueRanges);
+            var ranges = new WriteContext(meta, meta.AppendNamePart(sheet), obj, serializer).ValueRanges;
+            return service.WriteRangesAsync(spreadsheet, ranges);
         }
 
         /// <summary>Creates a new ready-to-use instance of the serializer.</summary>
