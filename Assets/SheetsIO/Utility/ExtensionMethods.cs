@@ -39,15 +39,6 @@ namespace SheetsIO
             while (--i >= 0 && (value = func(value, i)) != null);
         }
         
-        public static IEnumerable<IOPointer> GetChildPointers(this IOPointer p) =>
-            string.IsNullOrEmpty(p.Name)
-                ? p.Rank == p.Field.Rank
-                      ? p.Field.Meta.GetPointers(p.Pos)
-                      : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, p.Pos.Add(p.Field.Offsets[p.Rank + 1].Scale(i)), ""))
-                : p.Rank == p.Field.Rank
-                    ? p.Field.Meta.GetSheetPointers(p.Name)
-                    : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, V2Int.Zero, $"{p.Name} {i + 1}"));
-        
         public static void ForEachChild(this object parent, IEnumerable<IOPointer> pointers, Action<IOPointer, object> action) {
             using var e = pointers.GetEnumerator();
             while (e.MoveNext() && TryGetChild(parent, e.Current, out var child))
@@ -64,8 +55,8 @@ namespace SheetsIO
             return true;
         }
 
-        public static bool TryCreateFromChildren(this IOPointer p, SheetsIO.ReadObjectDelegate create, out object result) =>
-            (result = p.GetChildPointers().TryGetChildren(create, out var childrenList) || p.IsValidContent(childrenList)
+        public static bool TryCreateFromChildren(this IOPointer p, SheetsIO.ReadObjectDelegate create, Func<IOPointer, IEnumerable<IOPointer>> func, out object result) =>
+            (result = func(p).TryGetChildren(create, out var childrenList) || p.IsValidContent(childrenList)
                           ? MakeObject(p, childrenList)
                           : null) != null;
 
@@ -79,13 +70,17 @@ namespace SheetsIO
                 return MakeArray(p, children);
             
             var result = Activator.CreateInstance(p.TargetType);
+            AddChildrenToObject(p, children, result);
+            return result;
+        }
+
+        static void AddChildrenToObject(IOPointer p, ArrayList children, object parent) {
             if (p.Rank == p.Field.Rank)
-                result.SetFields(p.Field.Meta.Regions.Select(x => x.FieldInfo), children);
-            else if (result is IList list)
+                parent.SetFields(p.Field.Meta.Regions.Select(x => x.FieldInfo), children);
+            else if (parent is IList list)
                 foreach (var child in children)
                     list.Add(child);
-            else SetValues(p, children, result);
-            return result;
+            else SetValues(p, children, parent);
         }
 
         static void SetValues(IOPointer p, IEnumerable children, object parent) {

@@ -33,15 +33,15 @@ namespace SheetsIO
 
         bool TryCreateSheet(IOPointer p, out object result) => (p.Rank == p.Field.Rank
                                                                      ? TryReadType(p.Field.Meta, p.Name, out result)
-                                                                     : p.TryCreateFromChildren(TryCreateSheet, out result))
+                                                                     : p.TryCreateFromChildren(TryCreateSheet, IOPointer.GetSheetPointers, out result))
                                                              || p.Optional;
 
         public bool TryApplyRange(ValueRange range) { // todo: probably can be merged with p.TryCreateFromChildren()
             var (pointers, obj) = dictionary.First(pair => StringComparer.Ordinal.Equals(range.Range.GetSheetName(), pair.Key.GetSheetName())).Value;
-            bool result = pointers.TryGetChildren(new ReadRangeContext(range, serializer).Delegate, out var children);
-            if (result)
-                obj.SetFields(pointers.Select(x => x.Field.FieldInfo), children);
-            return result;
+            if (!pointers.TryGetChildren(new ReadRangeContext(range, serializer).Delegate, out var children))
+                return false;
+            obj.SetFields(pointers.Select(x => x.Field.FieldInfo), children);
+            return true;
         }
     }
 }

@@ -16,7 +16,7 @@ namespace SheetsIO
             if (pointer.IsValue)
                 WriteValue(obj, pointer.Pos);
             else
-                obj.ForEachChild(pointer.GetChildPointers(), WriteRegion);
+                obj.ForEachChild(IOPointer.GetRegionPointers(pointer), WriteRegion);
         } // todo: highlight elements of free array with color (chessboard-ish order)    with   ((index.X + index.Y) & 1) ? color1 : color2
 
         void WriteValue(object value, V2Int pos) {

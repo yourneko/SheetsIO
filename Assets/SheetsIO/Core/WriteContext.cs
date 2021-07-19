@@ -27,7 +27,7 @@ namespace SheetsIO
             if (pointer.Rank == pointer.Field.Rank)
                 WriteType(pointer.Field.Meta, pointer.Name, obj);
             else
-                obj.ForEachChild(pointer.GetChildPointers(), WriteSheet);
+                obj.ForEachChild(IOPointer.GetSheetPointers(pointer), WriteSheet);
         }
     }
 }

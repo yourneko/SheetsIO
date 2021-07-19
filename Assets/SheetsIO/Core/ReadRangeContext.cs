@@ -16,7 +16,7 @@ namespace SheetsIO
 
         bool TryCreate(IOPointer p, out object result) => (p.IsValue
                                                                ? TryReadRegion(p, out result)
-                                                               : p.TryCreateFromChildren(TryCreate, out result))
+                                                               : p.TryCreateFromChildren(TryCreate, IOPointer.GetRegionPointers, out result))
                                                        || p.Optional;
 
         bool TryReadRegion(IOPointer p, out object result) => (result = values.TryGetElement(p.Pos.X, out var column) && column.TryGetElement(p.Pos.Y, out var cell)
