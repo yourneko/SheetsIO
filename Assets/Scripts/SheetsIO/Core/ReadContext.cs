@@ -31,12 +31,13 @@ namespace SheetsIO
             return true;
         }
 
-        bool ReadSheetObject(IOPointer p, out object obj) => (p.Rank == p.Field.Rank
-                                                                  ? ReadType(p.Field.Meta, p.Name, out obj)
-                                                                  : (obj = IOPointer.GetChildrenSheets(p).TryGetChildren(ReadSheetObject, out var l)
-                                                                               ? p.MakeObject(l)
-                                                                               : null) != null)
-                                                          || p.Optional;
+        bool ReadSheetObject(IOPointer p, out object obj) {
+            return (p.Rank == p.Field.Rank
+                        ? ReadType(p.Field.Meta, p.Name, out obj)
+                        : (obj = IOPointer.GetChildrenSheets(p).TryGetChildren(ReadSheetObject, out var l) ? p.MakeObject(l) : null) != null)
+                || p.Optional;
+        }
+
         public bool TryApplyRange(ValueRange range) {
             var (pointers, obj) = dictionary.First(pair => StringComparer.Ordinal.Equals(range.Range.GetSheetName(), pair.Key.GetSheetName())).Value;
             bool result = pointers.TryGetChildren(new ReadRangeContext(range, serializer).Delegate, out var children);

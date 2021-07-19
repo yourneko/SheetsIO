@@ -69,7 +69,7 @@ namespace SheetsIO
         }
         
         public static object MakeObject(this IOPointer p, ArrayList children) {
-            if (p.IsArray) return children.ToArray();
+            if (p.Field.Types[p.Rank].IsArray) return children.ToArray();
             
             var result = Activator.CreateInstance(p.TargetType);
             if (p.Rank == p.Field.Rank)

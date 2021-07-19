@@ -35,17 +35,14 @@ namespace SheetsIO
             Rank        = Types.Count - 1;
             Meta        = Types[Rank].GetIOAttribute();
             Sizes       = (Meta?.Size ?? new V2Int(1, 1)).RepeatAggregated(Rank, NextRankSize).Reverse().ToArray();
-            if (Rank == 0) return;
-            
             if (!string.IsNullOrEmpty(Meta?.SheetName) && FieldInfo.GetCustomAttribute<IOPlacementAttribute>() != null)
-                throw new Exception($"Remove MapPlacement attribute from a field {FieldInfo.Name}. " +
+                throw new Exception($"Remove IOPlacement attribute from a field {FieldInfo.Name}. " +
                                     $"Instances of type {Types[Rank].Name} can't be arranged, because they are placed on separate sheets.");
         }
 
-        internal int MaxCount(int rank) => rank < ElementsCount.Count ? ElementsCount[rank] : SheetsIO.MaxArrayElements;
         static Type NextType(Type type, int rank) => type.GetTypeInfo().GetInterfaces().FirstOrDefault(IsCollection)?.GetGenericArguments()[0];
         static bool IsCollection(Type type) => type != typeof(string) && type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ICollection<>);
-        V2Int NextRankSize(V2Int v2, int rank) => v2.Scale((rank & 1) == 0 ? MaxCount(rank - 1) : 1,
-                                                           (rank & 1) == 0 ? 1 : MaxCount(rank - 1));
+        internal int MaxCount(int rank) => rank < ElementsCount.Count ? ElementsCount[rank] : SheetsIO.MaxArrayElements;
+        V2Int NextRankSize(V2Int v2, int rank) => v2.Scale((rank & 1) == 0 ? MaxCount(rank + 1) : 1, (rank & 1) == 0 ? 1 : MaxCount(rank + 1));
     }
 }

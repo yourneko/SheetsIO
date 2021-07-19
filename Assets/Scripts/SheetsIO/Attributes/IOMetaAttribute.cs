@@ -30,8 +30,8 @@ namespace SheetsIO
             var allFields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                                 .Select(field => field.GetIOAttribute()).Where(x => x != null).ToArray();
             if (allFields.Length == 0)
-                throw new Exception(
-                    $"Class {type.Name} has no MapFields! Add MapField attribute to some fields in class {type.Name}, or remove the MapClass attribute.");
+                throw new Exception($"Class {type.Name} has no IOField's!");
+            
             Sheets   = allFields.Where(x => !string.IsNullOrEmpty(x.Meta?.SheetName ?? string.Empty)).ToArray();
             Regions = allFields.Where(x => string.IsNullOrEmpty(x.Meta?.SheetName ?? string.Empty))
                                .OrderBy(f => f.FieldInfo.GetCustomAttribute<IOPlacementAttribute>()?.SortOrder
