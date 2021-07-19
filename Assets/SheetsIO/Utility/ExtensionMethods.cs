@@ -39,23 +39,19 @@ namespace SheetsIO
             while (--i >= 0 && (value = func(value, i)) != null);
         }
         
+        public static IEnumerable<IOPointer> GetChildPointers(this IOPointer p) =>
+            string.IsNullOrEmpty(p.Name)
+                ? p.Rank == p.Field.Rank
+                      ? p.Field.Meta.GetPointers(p.Pos)
+                      : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, p.Pos.Add(p.Field.Offsets[p.Rank + 1].Scale(i)), ""))
+                : p.Rank == p.Field.Rank
+                    ? p.Field.Meta.GetSheetPointers(p.Name)
+                    : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, V2Int.Zero, $"{p.Name} {i + 1}"));
+        
         public static void ForEachChild(this object parent, IEnumerable<IOPointer> pointers, Action<IOPointer, object> action) {
             using var e = pointers.GetEnumerator();
-            while (e.MoveNext() && parent.TryGetChild(e.Current, out var child))
+            while (e.MoveNext() && TryGetChild(parent, e.Current, out var child))
                 action.Invoke(e.Current, child);
-        }
-
-        static bool TryGetChild(this object parent, IOPointer p, out object child) {
-            if (parent != null && p.Rank == 0) {
-                child = p.Field.FieldInfo.GetValue(parent);
-                return true;
-            }
-            if (parent is IList list && list.Count > p.Index) {
-                child = list[p.Index];
-                return true;
-            }
-            child = null;
-            return !p.IsFreeSize;
         }
         
         public static bool TryGetChildren(this IEnumerable<IOPointer> p, SheetsIO.ReadObjectDelegate create, out ArrayList list) {
@@ -67,8 +63,18 @@ namespace SheetsIO
                     return false;
             return true;
         }
-        
-        public static object MakeObject(this IOPointer p, ArrayList children) {
+
+        public static bool TryCreateFromChildren(this IOPointer p, SheetsIO.ReadObjectDelegate create, out object result) =>
+            (result = p.GetChildPointers().TryGetChildren(create, out var childrenList) || p.IsValidContent(childrenList)
+                          ? MakeObject(p, childrenList)
+                          : null) != null;
+
+        public static void SetFields(this object parent, IEnumerable<FieldInfo> fields, ArrayList children) {
+            foreach (var (f, child) in fields.Zip(children.Cast<object>(), (f, child) => (f, child)))
+                f.SetValue(parent, child);
+        }
+
+        static object MakeObject(IOPointer p, ArrayList children) {
             if (p.Field.Types[p.Rank].IsArray) 
                 return MakeArray(p, children);
             
@@ -82,22 +88,30 @@ namespace SheetsIO
             return result;
         }
 
-        public static void SetFields(this object parent, IEnumerable<FieldInfo> fields, ArrayList children) {
-            foreach (var (f, child) in fields.Zip(children.Cast<object>(), (f, child) => (f, child)))
-                f.SetValue(parent, child);
-        }
-
         static void SetValues(IOPointer p, IEnumerable children, object parent) {
             var method = addMethodInfo.MakeGenericMethod(p.Field.Types[p.Rank]);
             foreach (var child in children)
                 method.Invoke(parent, new[]{child});
         }
 
-        static object MakeArray(IOPointer p, ArrayList children) {
+        static object MakeArray(IOPointer p, IList children) {
             var result = (IList)Array.CreateInstance(p.Field.Types[p.Rank + 1], children.Count);
             for (int i = 0; i < children.Count; i++)
                 result[i] = children[i];
             return result;
+        }
+
+        static bool TryGetChild(object parent, IOPointer p, out object child) {
+            if (parent != null && p.Rank == 0) {
+                child = p.Field.FieldInfo.GetValue(parent);
+                return true;
+            }
+            if (parent is IList list && list.Count > p.Index) {
+                child = list[p.Index];
+                return true;
+            }
+            child = null;
+            return !p.IsFreeSize;
         }
     }
 }

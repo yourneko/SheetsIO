@@ -26,7 +26,7 @@ namespace SheetsIO
             var spreadsheets = await service.GetSpreadsheetAsync(spreadsheet);
             var context = new ReadContext(spreadsheets.GetSheetsList(), serializer);
             var meta = typeof(T).GetIOAttribute();
-            if (!context.ReadType(meta, meta.AppendNamePart(sheet), out var result))
+            if (!context.TryReadType(meta, meta.AppendNamePart(sheet), out var result))
                 throw new Exception("Can't parse the requested object. Some required sheets are missing in the provided spreadsheet");
 
             var valueRanges = await service.GetValueRanges(spreadsheet, context.Ranges);

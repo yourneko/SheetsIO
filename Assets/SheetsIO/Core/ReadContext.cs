@@ -18,10 +18,10 @@ namespace SheetsIO
             dictionary      = new Dictionary<string, (IOPointer[] pointers, object obj)>();
         }
 
-        public bool ReadType(IOMetaAttribute type, string name, out object result) {
+        public bool TryReadType(IOMetaAttribute type, string name, out object result) {
             result = Activator.CreateInstance(type.Type);
             var sPointers = type.GetSheetPointers(name).ToArray();
-            if (!sPointers.TryGetChildren(ReadSheetObject, out var children))
+            if (!sPointers.TryGetChildren(TryCreateSheet, out var children)) // todo: probably can be merged with p.TryCreateFromChildren()
                 return false;
             result.SetFields(sPointers.Select(p => p.Field.FieldInfo), children);
             if (type.Regions.Count == 0) return true;
@@ -31,14 +31,12 @@ namespace SheetsIO
             return true;
         }
 
-        bool ReadSheetObject(IOPointer p, out object result) {
-            return (p.Rank == p.Field.Rank
-                        ? ReadType(p.Field.Meta, p.Name, out result)
-                        : (result = IOPointer.GetChildrenSheets(p).TryGetChildren(ReadSheetObject, out var l) ? p.MakeObject(l) : null) != null)
-                || p.Optional;
-        }
+        bool TryCreateSheet(IOPointer p, out object result) => (p.Rank == p.Field.Rank
+                                                                     ? TryReadType(p.Field.Meta, p.Name, out result)
+                                                                     : p.TryCreateFromChildren(TryCreateSheet, out result))
+                                                             || p.Optional;
 
-        public bool TryApplyRange(ValueRange range) {
+        public bool TryApplyRange(ValueRange range) { // todo: probably can be merged with p.TryCreateFromChildren()
             var (pointers, obj) = dictionary.First(pair => StringComparer.Ordinal.Equals(range.Range.GetSheetName(), pair.Key.GetSheetName())).Value;
             bool result = pointers.TryGetChildren(new ReadRangeContext(range, serializer).Delegate, out var children);
             if (result)

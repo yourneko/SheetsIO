@@ -12,11 +12,11 @@ namespace SheetsIO
             serializer = s;
         }
 
-        public void WriteObject(IOPointer pointer, object obj) {
+        public void WriteRegion(IOPointer pointer, object obj) {
             if (pointer.IsValue)
                 WriteValue(obj, pointer.Pos);
             else
-                obj.ForEachChild(IOPointer.GetChildren(pointer), WriteObject);
+                obj.ForEachChild(pointer.GetChildPointers(), WriteRegion);
         } // todo: highlight elements of free array with color (chessboard-ish order)    with   ((index.X + index.Y) & 1) ? color1 : color2
 
         void WriteValue(object value, V2Int pos) {

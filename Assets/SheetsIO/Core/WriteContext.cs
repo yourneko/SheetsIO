@@ -15,19 +15,19 @@ namespace SheetsIO
         }
 
         void WriteType(IOMetaAttribute type, string name, object obj) {
-            obj.ForEachChild(type.GetSheetPointers(name), WriteSheetObject);
+            obj.ForEachChild(type.GetSheetPointers(name), WriteSheet);
             if (type.Regions.Count == 0) return;
 
             var sheet = new WriteSheetContext(serializer);
-            obj.ForEachChild(type.GetPointers(V2Int.Zero), sheet.WriteObject);
+            obj.ForEachChild(type.GetPointers(V2Int.Zero), sheet.WriteRegion);
             ValueRanges.Add(new ValueRange {Values = sheet.Values, MajorDimension = "COLUMNS", Range = type.GetA1Range(name, SheetsIO.FirstCell)});
         }
 
-        void WriteSheetObject(IOPointer pointer, object obj) {
+        void WriteSheet(IOPointer pointer, object obj) {
             if (pointer.Rank == pointer.Field.Rank)
                 WriteType(pointer.Field.Meta, pointer.Name, obj);
             else
-                obj.ForEachChild(IOPointer.GetChildrenSheets(pointer), WriteSheetObject);
+                obj.ForEachChild(pointer.GetChildPointers(), WriteSheet);
         }
     }
 }
