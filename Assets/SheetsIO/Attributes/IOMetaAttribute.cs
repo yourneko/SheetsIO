@@ -42,6 +42,6 @@ namespace SheetsIO
 
         internal string AppendNamePart(string parentName) => $"{parentName} {SheetName}".Trim();
         internal IEnumerable<IOPointer> GetSheetPointers(string name) => Sheets.Select((f, i) => new IOPointer(f, 0, i, V2Int.Zero, f.Meta.AppendNamePart(name)));
-        internal IEnumerable<IOPointer> GetPointers(V2Int pos) => Regions.Select((f, i) => new IOPointer(f, 0, i, pos.Add(f.PosInType), ""));
+        internal IEnumerable<IOPointer> GetPointers(V2Int pos) => Regions.Select((f, i) => new IOPointer(f, 0, i, pos + f.PosInType, ""));
     }
 }

@@ -32,7 +32,7 @@ namespace SheetsIO
             return exists;
         }
 
-        public static IEnumerable<T> RepeatAggregated<T>(this T start, int max, Func<T, int, T> func) {
+        public static IEnumerable<T> Produce<T>(this T start, int max, Func<T, int, T> func) {
             int i = max;
             var value = start;
             do yield return value; // kind of Enumerable.Aggregate(), but after each step a current value is returned

@@ -29,12 +29,10 @@ namespace SheetsIO
         public bool IsValidContent(ArrayList children) => Rank < Field.Rank 
                                                        && (children.Count > 0 || Rank == 0);
 
-        public static IEnumerable<IOPointer> GetRegionPointers(IOPointer p) =>
-            p.Rank == p.Field.Rank
+        public static IEnumerable<IOPointer> GetRegionPointers(IOPointer p) => p.Rank == p.Field.Rank
                 ? p.Field.Meta.GetPointers(p.Pos)
-                : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, p.Pos.Add(p.Field.Offsets[p.Rank + 1].Scale(i)), ""));
-        public static IEnumerable<IOPointer> GetSheetPointers(IOPointer p) =>
-            p.Rank == p.Field.Rank
+                : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, p.Pos + p.Field.Offsets[p.Rank + 1] * i, ""));
+        public static IEnumerable<IOPointer> GetSheetPointers(IOPointer p) => p.Rank == p.Field.Rank
                 ? p.Field.Meta.GetSheetPointers(p.Name)
                 : p.ChildIndices.Select(i => new IOPointer(p.Field, p.Rank + 1, i, V2Int.Zero, $"{p.Name} {i + 1}"));
     }
